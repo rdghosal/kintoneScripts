@@ -5,10 +5,18 @@ Displays during the table view of the app.
 kintone.events.on("app.record.index.show", function(event){
     // Fetch all records and render new HTML elements once
     if (document.getElementById("field-selector") === null) {
+        const menuSpace = kintone.app.getHeaderMenuSpaceElement();
+        // Create a loading message
+        const loadingMessage = document.createElement("div")
+        loadingMessage.setAttribute("style", "color: red;")
+        loadingMessage.innerHTML = "検索ボックスを読み込み中・・・"
+        menuSpace.appendChild(loadingMessage);
+
         fetchRecords().then(records => {
             // Grab fieldnames from first record
             const fields = Object.keys(records[0]);
-            makeSearchBar(fields);
+            menuSpace.removeChild(loadingMessage);
+            makeSearchBar(fields, menuSpace);
             document.getElementById("search-button").addEventListener("click", () => searchRecords(records));
         });
     }
@@ -39,7 +47,7 @@ async function fetchRecords(lastRecordId, records) {
     return allRecords;
 }
 
-function makeSearchBar(fields) {
+function makeSearchBar(fields, menuSpace) {
     /* 
     * Creates new HTML elements composing searchbar 
     */    
@@ -78,7 +86,6 @@ function makeSearchBar(fields) {
     helpButton.onclick = () => alert("フィールドを選択し、キーワードを検索してください。");
 
     // Grab space in app and insert new DOM elements
-    const menuSpace = kintone.app.getHeaderMenuSpaceElement();
     menuSpace.appendChild(fieldSelector);
     menuSpace.appendChild(searchBar);
     menuSpace.appendChild(searchButton);
