@@ -16,12 +16,15 @@ kintone.events.on("app.record.index.show", event => {
 
         // Add each field as a search option
         fields.forEach(field => {
-            const option = document.createElement("option");
-            if (field === "プロジェクト名称") {
-                option.selected = true; // Select default
+            if (field.indexOf("$") === -1 && field.indexOf("者") === -1 
+                && field.indexOf("日時") === -1) {
+                const option = document.createElement("option");
+                if (field === "プロジェクト名称") {
+                    option.selected = true; // Select default
+                }
+                option.innerHTML = field;
+                fieldSelector.appendChild(option);
             }
-            option.innerHTML = field;
-            fieldSelector.appendChild(option);
         });
         
         // Create a <input> element to allow text input (searchbar)
@@ -55,8 +58,9 @@ kintone.events.on("app.record.index.show", event => {
 function searchRecords(records) {
     const field = document.getElementById("field-selector").value;
     const query = document.getElementById("search-bar").value;
-    if (query.length < 2 || query.indexOf(" ") > -1 || query.indexOf("　") > -1) {
-        return alert("2文字以上かつ空白抜きのクエリ―で検索してください");
+    let minLength = (field === "登録日付") ? 6 : 2;
+    if (query.length < minLength || query.indexOf(" ") > -1 || query.indexOf("　") > -1) {
+        return alert(`${minLength}文字以上かつ空白抜きのクエリ―で検索してください`);
     }
 
     const filteredRecords = records.filter(record => {
