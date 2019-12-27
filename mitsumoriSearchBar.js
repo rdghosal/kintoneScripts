@@ -58,7 +58,7 @@ kintone.events.on("app.record.index.show", event => {
 function searchRecords(records) {
     const field = document.getElementById("field-selector").value;
     const query = document.getElementById("search-bar").value;
-    let minLength = (field === "登録日付") ? 6 : 2;
+    let minLength = (field === "登録日付") ? 6 : 3;
     if (query.length < minLength || query.indexOf(" ") > -1 || query.indexOf("　") > -1) {
         return alert(`${minLength}文字以上かつ空白抜きのクエリ―で検索してください`);
     }
