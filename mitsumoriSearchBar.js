@@ -8,46 +8,47 @@ kintone.events.on("app.record.index.show", event => {
     const records = event.records;
     const fields = Object.keys(records[0]);
 
-    // Create a <select> element to pick a field for query
-    const fieldSelector = document.createElement("select");
-    fieldSelector.setAttribute("id", "field-selector");
+    if (document.getElementById("search-bar") === null) {
+        // Create a <select> element to pick a field for query
+        const fieldSelector = document.createElement("select");
+        fieldSelector.setAttribute("id", "field-selector");
 
-    // Add each field as a search option
-    fields.forEach(field => {
-        const option = document.createElement("option");
-        if (field === "プロジェクト名称") {
-            option.selected = true; // Select default
-        }
-        option.innerHTML = field;
-        fieldSelector.appendChild(option);
-    });
-    
-    // Create a <input> element to allow text input (searchbar)
-    const searchBar = document.createElement("input");
-    searchBar.setAttribute("type", "test");
-    searchBar.setAttribute("id", "search-bar");
-    searchBar.setAttribute("placeholder", "キーワード入力");
-    searchBar.setAttribute("autofocus", "on");
-    searchBar.setAttribute("autocomplete", "on");
+        // Add each field as a search option
+        fields.forEach(field => {
+            const option = document.createElement("option");
+            if (field === "プロジェクト名称") {
+                option.selected = true; // Select default
+            }
+            option.innerHTML = field;
+            fieldSelector.appendChild(option);
+        });
+        
+        // Create a <input> element to allow text input (searchbar)
+        const searchBar = document.createElement("input");
+        searchBar.setAttribute("type", "test");
+        searchBar.setAttribute("id", "search-bar");
+        searchBar.setAttribute("placeholder", "キーワード入力");
+        searchBar.setAttribute("autofocus", "on");
+        searchBar.setAttribute("autocomplete", "on");
 
-    // Make button that initiates search algorithm upon click
-    const searchButton = document.createElement("button");
-    searchButton.innerHTML = "検索";
-    searchButton.id = "search-button";
+        // Make button that initiates search algorithm upon click
+        const searchButton = document.createElement("button");
+        searchButton.innerHTML = "検索";
+        searchButton.id = "search-button";
 
-    // Add a help button
-    const helpButton = document.createElement("button");
-    helpButton.innerHTML = "Help";
-    helpButton.onclick = () => alert("フィールドを選択し、キーワードを検索してください。");
+        // Add a help button
+        const helpButton = document.createElement("button");
+        helpButton.innerHTML = "Help";
+        helpButton.onclick = () => alert("フィールドを選択し、キーワードを検索してください。");
 
-    // Grab space in app and insert new DOM elements
-    const menuSpace = kintone.app.getHeaderMenuSpaceElement();
-    menuSpace.appendChild(fieldSelector);
-    menuSpace.appendChild(searchBar);
-    menuSpace.appendChild(searchButton);
-    menuSpace.appendChild(helpButton);
-
-    searchButton.addEventListener("click", () => searchRecords(records));
+        // Grab space in app and insert new DOM elements
+        const menuSpace = kintone.app.getHeaderMenuSpaceElement();
+        menuSpace.appendChild(fieldSelector);
+        menuSpace.appendChild(searchBar);
+        menuSpace.appendChild(searchButton);
+        menuSpace.appendChild(helpButton);
+    }
+    document.getElementById("search-button").addEventListener("click", () => searchRecords(records));
 });
 
 function searchRecords(records) {
