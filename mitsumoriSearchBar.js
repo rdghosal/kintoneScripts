@@ -5,6 +5,7 @@ Displays during the table view of the app.
 
 kintone.events.on("app.record.index.show", event => {
     // Grab first records and read its fieldnames
+    // const appId = kintone.app.getId();
     const records = event.records;
     const fields = Object.keys(records[0]);
 
@@ -54,6 +55,10 @@ kintone.events.on("app.record.index.show", event => {
 function searchRecords(records) {
     const field = document.getElementById("field-selector").value;
     const query = document.getElementById("search-bar").value;
+    if (query.length < 2 || query.indexOf(" ") > -1 || query.indexOf("　") > -1) {
+        return alert("2文字以上かつ空白抜きのクエリ―で検索してください");
+    }
+
     const filteredRecords = records.filter(record => {
         return filterRecords(field, query, record);
     });
@@ -66,7 +71,7 @@ function searchRecords(records) {
     // Make query string for each record
     // navigate to each found record each as separate search result
     filteredRecords.forEach(rec => {
-        window.open(baseUrl + `/k/search?keyword=${rec[field].value}&sortOrder=DATETIME&app=${kintone.app.getId()}`);
+        window.open(baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`);
     });
 }
 
@@ -74,7 +79,7 @@ function filterRecords(field, query, record) {
     let foundMatch = false;
     if (typeof record[field].value === "string") {
         // Fuzzy matching for type string
-        const index = record[field].value.indexOf(query);
+        const index = record[field].value.toLowerCase().indexOf(query.toLowerCase());
         if (index > -1) {
             foundMatch = true;
         }
@@ -84,6 +89,5 @@ function filterRecords(field, query, record) {
             foundMatch = true;
         }
     }
-    console.log(foundMatch);
     return foundMatch;
 }  
