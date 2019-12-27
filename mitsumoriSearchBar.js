@@ -1,21 +1,23 @@
 /* 
-Kintone code for a search bar that queries using fuzzy matching.
-Displays during the table view of the app.
+* Kintone JavaScript API code, which renders a search bar 
+* that queries using fuzzy matching within app records.
+* Search bar loads all records and renders when viewing all app records.
 */
+
 kintone.events.on("app.record.index.show", function(event){
     // Fetch all records and render new HTML elements once
     if (document.getElementById("field-selector") === null) {
+        // Grab space for new HTML els and insert a loading message        
         const menuSpace = kintone.app.getHeaderMenuSpaceElement();
-        // Create a loading message
         const loadingMessage = document.createElement("div")
-        loadingMessage.setAttribute("style", "color: red;")
+        loadingMessage.setAttribute("style", "color: red; font-weight: bolder;")
         loadingMessage.innerHTML = "検索ボックスを読み込み中・・・"
         menuSpace.appendChild(loadingMessage);
 
         fetchRecords().then(records => {
             // Grab fieldnames from first record
             const fields = Object.keys(records[0]);
-            menuSpace.removeChild(loadingMessage);
+            menuSpace.removeChild(loadingMessage); // Destroy message for new els
             makeSearchBar(fields, menuSpace);
             document.getElementById("search-button").addEventListener("click", () => searchRecords(records));
         });
