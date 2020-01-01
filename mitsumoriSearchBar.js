@@ -14,7 +14,7 @@ kintone.events.on("app.record.index.show", function(event){
         // Grab space for new HTML els and insert a loading message        
         const menuSpace = kintone.app.getHeaderMenuSpaceElement();
         const loadingMessage = document.createElement("div");
-        loadingMessage.setAttribute("style", "color: red; font-weight: bolder; font-size: 1.5rem;");
+        loadingMessage.setAttribute("style", "color: red; font-weight: bolder; font-size: 1.2rem;");
         loadingMessage.innerHTML = "検索ボックスを読み込み中・・・";
         menuSpace.appendChild(loadingMessage);
 
@@ -148,43 +148,51 @@ function searchRecords(records) {
 
 function filterRecords(field, query, record) {
     /* 
-    * Provides fuzzy matching for strings,
-    * whereas strict matching used for numbers
+    * Provides fuzzy matching for strings after checking record data type
+    */
+    // Check if record data is subtable
+    if (typeof record[field].value === "object") {
+        return verifyTableData(query, record[field].value[0]);
+    }
+    // If not a subtable, verify record data as is
+    return verifyRecordData(query, record[field]);
+}  
+
+function verifyTableData(query, rowData) {
+    /*
+    * Parses and verfies tabular data
     */
     let foundMatch = false;
-    // Check if requested field is client / project info
-    if (field === "顧客情報" || field.indexOf("案件") > -1) {
-        // Get subfield names using first row of subtable
-        const subFields = Object.keys(record[field].value[0].value);
-        subFields.forEach(subField => {
-            const subRecord = record[field].value[0].value;
-            if (typeof subRecord[subField].value === "string") {
-                // Fuzzy matching for type string
-                const index = subRecord[subField].value.toLowerCase().indexOf(query.toLowerCase());
-                if (index > -1) {
-                    foundMatch = true;
-                }
-            } else if (typeof subRecord[subField].value === "number") {
-                // Hard matching for type number
-                if (subRecord[subField].value === query) {
-                    foundMatch = true;
-                }
-            }
-        });
-    } else if (typeof record[field].value === "string") {
+    const subFields = Object.keys(rowData.value);
+    // Check data in each field of table
+    subFields.forEach(subField => {
+        let subRecordData = rowData.value[subField];
+        if (verifyRecordData(query, subRecordData)) {
+            foundMatch = true;
+        }
+    });
+    return foundMatch
+}
+
+function verifyRecordData(query, recordData){
+    /*
+    * Verification algorithm that ensure fuzzy matching for string data
+    */ 
+    let foundMatch = false;
+    if (typeof recordData.value === "string") {
         // Fuzzy matching for type string
-        const index = record[field].value.toLowerCase().indexOf(query.toLowerCase());
+        const index = recordData.value.toLowerCase().indexOf(query.toLowerCase());
         if (index > -1) {
             foundMatch = true;
         }
-    } else if (typeof record[field].value === "number") {
+    } else if (typeof recordData.value === "number") {
         // Hard matching for type number
-        if (record[field].value === query) {
+        if (recordData.value === query) {
             foundMatch = true;
         }
     }
     return foundMatch;
-}  
+}
 
 function makeResultsTable(field, query, results) {
     /* 
@@ -213,12 +221,13 @@ function makeResultsTable(field, query, results) {
         let th = `<th scope='col'>${headers[i]}</th>`;
         html += th;
     }
+    // Close table headers
     html += "</thead><tbody>";
 
     // Add record data as row
     for (let j = 0; j < results.length; j++) {
         let tr = "<tr>";
-        // Fill each column
+        // Fill each column of row with table data
         for (let k = 0; k < headers.length; k++) {
             let td = `<td>${getCellData(results[j], headers[k])}</td>`;
             tr += td;
