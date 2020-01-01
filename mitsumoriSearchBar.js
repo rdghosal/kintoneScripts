@@ -26,7 +26,7 @@ kintone.events.on("app.record.index.show", function(event){
 
 async function fetchRecords(lastRecordId, records) {
     /* 
-    * An async version of the seek method proposed here:
+    * An async version of the seek method presented here:
     * https://developer.kintone.io/hc/en-us/articles/360014037114
     */
 
@@ -117,9 +117,24 @@ function searchRecords(records) {
 
     // Make query string for each record
     // navigate to each found record each as separate search result
+    const results = new Array();
+
+    // Grab a list of options in the <select> el we made
+    const selectOptions = document.getElementById("field-selector").options;
+    const options = new Array(selectOptions.length);
+    for (let i = 0; i < selectOptions.length; i++) {
+        options[i] = selectOptions[i].value;
+    }
+
     filteredRecords.forEach(rec => {
-        window.open(baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`);
+        let result = {};
+        options.forEach(opt => { result[opt] = rec[opt]; });
+        // console.log("RECORD", rec, "RESULTS", result);
+        result.URL = baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`;
+        results.push(result);
     });
+
+    makeResultsTable(field, query, results);
 }
 
 function filterRecords(field, query, record) {
@@ -136,9 +151,61 @@ function filterRecords(field, query, record) {
         }
     } else if (typeof record[field].value === "number") {
         // Hard matching for type number
-        if (record[field].value === query) {
+        if (record[field] === query) {
             foundMatch = true;
         }
     }
     return foundMatch;
 }  
+
+function makeResultsTable(field, query, results) {
+    /* Displays search results as table on separate tab */
+
+    // TODO: add 顧客情報 email and name, company
+
+    // Metadata and Bootstrap import
+    let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/><title id='title'>custom-view</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
+    const headers = Object.keys(results[0]);
+    
+    // Display query
+    html += `<h1 style="text-align:center;">FIELD: ${field} | QUERY: ${query}</h1>`;
+
+    // Start table
+    html += "<table class='table'><thead class='thead-dark'>";
+
+    // Add headers
+    for (let i = 0; i < headers.length; i++) {
+        let th = `<th scope='col'>${headers[i]}</th>`;
+        html += th;
+    }
+    html += "</thead><tbody>";
+
+    // Add record data as row
+    for (let j = 0; j < results.length; j++) {
+        let tr = "<tr>";
+        // Fill each column
+        for (let k = 0; k < headers.length; k++) {
+            let data = undefined;
+            if (headers[k] === "URL") {
+                data = `<a href="${results[j][headers[k]]}" target=_blank>リンク</a>`;
+            } else {
+                data = results[j][headers[k]].value;
+                console.log(headers[k])
+                console.log(data);
+            }
+            //change here if changing undefined val view <td scope='row'></th>
+            if (!data) {
+                data = "n/a";
+            }
+            let td = `<td>${data}</td>`;
+            tr += td;
+        }
+        tr += "</tr>"
+        html += tr;
+    }
+
+    // Closing html and write
+    html += "</tbody></table></body></html>";
+    const newWindow = window.open("", "", "", false);
+    newWindow.document.write(html);
+}
