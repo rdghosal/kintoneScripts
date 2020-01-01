@@ -5,13 +5,17 @@
 */
 
 kintone.events.on("app.record.index.show", function(event){
+    /*
+    * Builds a searchbar after retrieving all records in app,
+    * the button and input field thereof calling relevant functions for fuzzy matching and outputing a results table
+    */
     // Fetch all records and render new HTML elements once
     if (document.getElementById("field-selector") === null) {
         // Grab space for new HTML els and insert a loading message        
         const menuSpace = kintone.app.getHeaderMenuSpaceElement();
-        const loadingMessage = document.createElement("div")
-        loadingMessage.setAttribute("style", "color: red; font-weight: bolder;")
-        loadingMessage.innerHTML = "検索ボックスを読み込み中・・・"
+        const loadingMessage = document.createElement("div");
+        loadingMessage.setAttribute("style", "color: red; font-weight: bolder; font-size: 1.5rem;");
+        loadingMessage.innerHTML = "検索ボックスを読み込み中・・・";
         menuSpace.appendChild(loadingMessage);
 
         fetchRecords().then(records => {
@@ -19,7 +23,13 @@ kintone.events.on("app.record.index.show", function(event){
             const fields = Object.keys(records[0]);
             menuSpace.removeChild(loadingMessage); // Destroy message for new els
             makeSearchBar(fields, menuSpace);
+            // Add event listeners for search and result output
             document.getElementById("search-button").addEventListener("click", () => searchRecords(records));
+            document.getElementById("search-bar").addEventListener("keypress", event => {
+                if (event.keyCode === 13) {
+                    searchRecords(records);
+                }
+            });
         });
     }
 });
@@ -29,7 +39,6 @@ async function fetchRecords(lastRecordId, records) {
     * An async version of the seek method presented here:
     * https://developer.kintone.io/hc/en-us/articles/360014037114
     */
-
     // Array of all records to be populated recursively
     let allRecords = records || [];
     let query = lastRecordId ? "$id > " + lastRecordId : "";
@@ -130,7 +139,7 @@ function searchRecords(records) {
         let result = {};
         options.forEach(opt => { result[opt] = rec[opt]; });
         // console.log("RECORD", rec, "RESULTS", result);
-        result.URL = baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`;
+        result["結果URL"] = baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`;
         results.push(result);
     });
 
@@ -159,19 +168,19 @@ function filterRecords(field, query, record) {
 }  
 
 function makeResultsTable(field, query, results) {
-    /* Displays search results as table on separate tab */
-
-    // TODO: add 顧客情報 email and name, company
-
+    /* 
+    * Displays search results as table on separate tab 
+    */
     // Metadata and Bootstrap import
-    let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/><title id='title'>custom-view</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
-    const headers = Object.keys(results[0]);
-    
+    let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/><title id='title'>kintone | 検索結果</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
+    let headers = Object.keys(results[0]);
+    headers = headers.filter(header => header.indexOf("案件") === -1 && header.indexOf("レコード") === -1 && header !== "添付ファイル");
+
     // Display query
-    html += `<h1 style="text-align:center;">FIELD: ${field} | QUERY: ${query}</h1>`;
+    html += `<div id="container"><h1 style="text-align:center;">FIELD: ${field} | QUERY: ${query}</h1>`;
 
     // Start table
-    html += "<table class='table'><thead class='thead-dark'>";
+    html += "<table class='table table-striped table-hover'><thead class='thead-dark'>";
 
     // Add headers
     for (let i = 0; i < headers.length; i++) {
@@ -185,27 +194,59 @@ function makeResultsTable(field, query, results) {
         let tr = "<tr>";
         // Fill each column
         for (let k = 0; k < headers.length; k++) {
-            let data = undefined;
-            if (headers[k] === "URL") {
-                data = `<a href="${results[j][headers[k]]}" target=_blank>リンク</a>`;
-            } else {
-                data = results[j][headers[k]].value;
-                console.log(headers[k])
-                console.log(data);
-            }
-            //change here if changing undefined val view <td scope='row'></th>
-            if (!data) {
-                data = "n/a";
-            }
-            let td = `<td>${data}</td>`;
+            let td = `<td>${getCellData(results[j], headers[k])}</td>`;
             tr += td;
         }
         tr += "</tr>"
         html += tr;
     }
 
-    // Closing html and write
-    html += "</tbody></table></body></html>";
+    // Close html and write to new tab
+    html += "</tbody></table></div></body></html>";
     const newWindow = window.open("", "", "", false);
     newWindow.document.write(html);
+    formatTable(newWindow.document);
+    newWindow.document.close(); // Close data stream
+}
+
+function getCellData(result, header) {
+    /* 
+    * Gets and formats data to be displayed from records
+    */
+    let data = undefined;
+    if (header === "結果URL") {
+        data = `<a href="${result[header]}" target=_blank>リンク</a>`;
+    } else if (header === "顧客情報") {
+        // Grab customer data via access to particular columns of first row
+        const customersCompanyName = result[header].value[0].value["顧客情報_企業"].value;
+        const customersName = result[header].value[0].value["顧客情報_担当者氏名"].value;
+        const customersEmail = result[header].value[0].value["顧客情報_担当者Mail"].value;
+        // Format cell
+        data = customersCompanyName + "<br>" + `<a href="mailto:${customersEmail}">${customersName}</a>`;
+    } else {
+        data = result[header].value;
+    }
+    //change here if changing undefined val view <td scope='row'></th>
+    if (!data) {
+        data = "-";
+    }
+    return data;
+}
+
+function formatTable(htmlDoc) {
+    /* 
+    * Formats the body, title, and table of the result tab 
+    */
+    // Format styling
+    const html = htmlDoc.getElementsByTagName("html")[0];
+    html.setAttribute("style", "width: 100vw;");
+
+    const body = htmlDoc.getElementsByTagName("body")[0];
+    body.setAttribute("style", "display: flex; justify-content: center; width: 100%; background-color:#333;");
+
+    const h1 = htmlDoc.getElementsByTagName("h1")[0];
+    h1.setAttribute("style", "margin-bottom: 2rem; text-align: center;");
+
+    const container = htmlDoc.getElementById("container");
+    container.setAttribute("style", "width: 75%; background-color: white; padding: 2rem 5rem;");
 }
