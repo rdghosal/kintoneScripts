@@ -110,8 +110,8 @@ function searchRecords(records) {
     */
     const field = document.getElementById("field-selector").value;
     const query = document.getElementById("search-bar").value;
-    let minLength = (field === "登録日付") ? 6 : 3; // Dates should be yyyy/m at least
-    if (query.length < minLength || query.indexOf(" ") > -1 || query.indexOf("　") > -1) {
+    let minLength = (field === "登録日付") ? 6 : 2; // Dates should be yyyy/m at least
+    if (query.length < minLength) {
         return alert(`${minLength}文字以上かつ空白抜きのクエリ―で検索してください`);
     }
 
@@ -152,7 +152,26 @@ function filterRecords(field, query, record) {
     * whereas strict matching used for numbers
     */
     let foundMatch = false;
-    if (typeof record[field].value === "string") {
+    // Check if requested field is client / project info
+    if (field === "顧客情報" || field.indexOf("案件") > -1) {
+        // Get subfield names using first row of subtable
+        const subFields = Object.keys(record[field].value[0].value);
+        subFields.forEach(subField => {
+            const subRecord = record[field].value[0].value;
+            if (typeof subRecord[subField].value === "string") {
+                // Fuzzy matching for type string
+                const index = subRecord[subField].value.toLowerCase().indexOf(query.toLowerCase());
+                if (index > -1) {
+                    foundMatch = true;
+                }
+            } else if (typeof subRecord[subField].value === "number") {
+                // Hard matching for type number
+                if (subRecord[subField].value === query) {
+                    foundMatch = true;
+                }
+            }
+        });
+    } else if (typeof record[field].value === "string") {
         // Fuzzy matching for type string
         const index = record[field].value.toLowerCase().indexOf(query.toLowerCase());
         if (index > -1) {
@@ -160,7 +179,7 @@ function filterRecords(field, query, record) {
         }
     } else if (typeof record[field].value === "number") {
         // Hard matching for type number
-        if (record[field] === query) {
+        if (record[field].value === query) {
             foundMatch = true;
         }
     }
@@ -171,13 +190,20 @@ function makeResultsTable(field, query, results) {
     /* 
     * Displays search results as table on separate tab 
     */
+    // Check if search failed
+    if (!results[0]) {
+        alert("レコードが見つかりませんでした。\nクエリまたは選択したフィールドを再確認の上、検索してください。")
+        return false;
+    }
+
     // Metadata and Bootstrap import
     let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/><title id='title'>kintone | 検索結果</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
     let headers = Object.keys(results[0]);
     headers = headers.filter(header => header.indexOf("案件") === -1 && header.indexOf("レコード") === -1 && header !== "添付ファイル");
 
     // Display query
-    html += `<div id="container"><h1 style="text-align:center;">FIELD: ${field} | QUERY: ${query}</h1>`;
+    html += `<div id="container"><h1 style="text-align:center;">FIELD: <span class="search-info">${field}</span> | QUERY: <span class="search-info">${query}</span></h1>`;
+    html += `<p><span style="font-weight:bold;">${results.length}個</span>のレコードが見つかりました。</p>`;
 
     // Start table
     html += "<table class='table table-striped table-hover'><thead class='thead-dark'>";
@@ -200,7 +226,6 @@ function makeResultsTable(field, query, results) {
         tr += "</tr>"
         html += tr;
     }
-
     // Close html and write to new tab
     html += "</tbody></table></div></body></html>";
     const newWindow = window.open("", "", "", false);
@@ -245,7 +270,15 @@ function formatTable(htmlDoc) {
     body.setAttribute("style", "display: flex; justify-content: center; width: 100%; background-color:#333;");
 
     const h1 = htmlDoc.getElementsByTagName("h1")[0];
-    h1.setAttribute("style", "margin-bottom: 2rem; text-align: center;");
+    h1.setAttribute("style", "margin-bottom: 1rem; text-align: center;");
+
+    const h1Spans = html.getElementsByClassName("search-info");
+    for (let i = 0; i < h1Spans.length; i++) {
+        h1Spans[i].setAttribute("style", "font-size: 1.75rem;");
+    }
+
+    const p = htmlDoc.getElementsByTagName("p")[0];
+    p.setAttribute("style", "text-align: center; margin-bottom: 2rem; font-size: 1.1rem;");
 
     const container = htmlDoc.getElementById("container");
     container.setAttribute("style", "width: 75%; background-color: white; padding: 2rem 5rem;");
