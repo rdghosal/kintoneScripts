@@ -208,12 +208,15 @@ function makeResultsTable(field, query, results) {
     }
 
     // Metadata and Bootstrap import
-    let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/><title id='title'>kintone | 検索結果</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
+    let html = "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml'><head><meta charset = 'utf-8'/>\
+                <title id='title'>kintone | 検索結果</title><link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css' \
+                integrity='sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T' crossorigin='anonymous'></head><body>";
     let headers = Object.keys(results[0]);
     headers = headers.filter(header => header.indexOf("案件") === -1 && header.indexOf("レコード") === -1 && header !== "添付ファイル");
 
     // Display query
-    html += `<div id="container"><h1 style="text-align:center;">FIELD: <span class="search-info">${field}</span> | QUERY: <span class="search-info">${query}</span></h1>`;
+    html += `<div id="container"><h1 style="text-align:center;">\
+            FIELD: <span class="search-info">${field}</span> | QUERY: <span class="search-info">${query}</span></h1>`;
     html += `<p><span style="font-weight:bold;">${results.length}個</span>のレコードが見つかりました。</p>`;
 
     // Start table
