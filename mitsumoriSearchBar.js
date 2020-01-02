@@ -94,7 +94,7 @@ function makeSearchBar(fields, menuSpace) {
     // Add a help button
     const helpButton = document.createElement("button");
     helpButton.innerHTML = "Help";
-    helpButton.onclick = () => alert("対象フィールドを選択、キーワードを入力した上、データ検索を行なってください。");
+    helpButton.onclick = () => alert("対象フィールドを選択、キーワードを入力してから、\nデータ検索を行なってください。");
 
     // Grab space in app and insert new DOM elements
     menuSpace.appendChild(fieldSelector);
