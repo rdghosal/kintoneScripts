@@ -1,7 +1,8 @@
 /* 
-* Kintone JavaScript API code, which renders a search bar 
-* that queries using fuzzy matching within app records.
-* Search bar loads all records and renders when viewing all app records.
+* Kintone JavaScript API code that renders an additional search bar 
+* capable of loading all record data and fuzzing matching queries thereagainst
+* Matched records are listed as a table on a separate tab,
+* including links to view each matched record.
 */
 
 kintone.events.on("app.record.index.show", function(event){
