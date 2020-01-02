@@ -136,10 +136,13 @@ function searchRecords(records) {
     }
 
     filteredRecords.forEach(rec => {
+        // Create a results object to memoize data to be tabulated
+        // and add a new field to
         let result = {};
         options.forEach(opt => { result[opt] = rec[opt]; });
-        // console.log("RECORD", rec, "RESULTS", result);
-        result["結果URL"] = baseUrl + `/k/search?keyword=${encodeURIComponent(rec[field].value)}&sortOrder=DATETIME&app=${kintone.app.getId()}`;
+        // pick a known string to make into URL rather than object
+        let toUrl = (typeof rec[field].value === "object") ? rec["プロジェクト名称"].value : rec[field].value;
+        result["結果URL"] = baseUrl + `/k/search?keyword=${encodeURIComponent(toUrl)}&sortOrder=DATETIME&app=${kintone.app.getId()}`;
         results.push(result);
     });
 
