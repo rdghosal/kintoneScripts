@@ -1,3 +1,5 @@
+*For an English explanation of this project, [click here](https://rdghosal.github.io/portfolio/reflections#searchBar).*
+
 searchBar.js
 ===
 ```
